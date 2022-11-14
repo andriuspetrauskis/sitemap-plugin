@@ -2,8 +2,7 @@
 
 [![License](https://img.shields.io/packagist/l/stefandoorn/sitemap-plugin.svg)](https://packagist.org/packages/stefandoorn/sitemap-plugin)
 [![Version](https://img.shields.io/packagist/v/stefandoorn/sitemap-plugin.svg)](https://packagist.org/packages/stefandoorn/sitemap-plugin)
-[![Build status on Linux](https://img.shields.io/travis/stefandoorn/sitemap-plugin/master.svg)](http://travis-ci.org/stefandoorn/sitemap-plugin)
-[![Scrutinizer Quality Score](https://img.shields.io/scrutinizer/g/stefandoorn/sitemap-plugin.svg)](https://scrutinizer-ci.com/g/stefandoorn/sitemap-plugin/)
+[![Build](https://github.com/stefandoorn/sitemap-plugin/actions/workflows/build.yml/badge.svg)](https://github.com/stefandoorn/sitemap-plugin/actions/workflows/build.yml)
 [![Coverage Status](https://coveralls.io/repos/github/stefandoorn/sitemap-plugin/badge.svg?branch=master)](https://coveralls.io/github/stefandoorn/sitemap-plugin?branch=master)
 
 <p align="center"><a href="https://sylius.com/plugins/" target="_blank"><img src="https://sylius.com/assets/badge-approved-by-sylius.png" width="200"></a></p>
@@ -25,36 +24,62 @@ extraction to a separate bundle.
 ## Installation
 
 1. Run `composer require stefandoorn/sitemap-plugin`.
-2. Add to `app/AppKernel.php`:
+2. Add to `app/config/bundles.php`:
 
 ```
-  new SitemapPlugin\SitemapPlugin(),
+  SitemapPlugin\SitemapPlugin::class => ['all' => true],
 ```
 
-3. Add to `app/config/config.yml`: 
+3. Add to `app/config/packages/_sylius.yaml`: 
 
 ```
-  - { resource: "@SitemapPlugin/Resources/config/config.yml" }
+    - { resource: "@SitemapPlugin/Resources/config/config.yaml" }
 ```
 
-4. Add to `app/config/routing.yml`: 
+4. Add to `app/config/routes.yaml`: 
 
 ```
 sylius_sitemap:
-     resource: "@SitemapPlugin/Resources/config/routing.yml"
+    resource: "@SitemapPlugin/Resources/config/routing.yml"
 ```
 
+5. Add to `app/config/packages/sylius_sitemap.yaml`: 
+
+   -  [Default configuration](#default-configuration)
+
+6. Forcing HTTPS on Generated URLs, see [Symfony Docu](https://symfony.com/doc/current/routing.html#forcing-https-on-generated-urls). In console commands, where there is no HTTP request, URLs use http by default. You can change this globally with these configuration parameters:
+
+```
+# config/services.yaml
+parameters:
+    router.request_context.scheme: 'https'
+```
+
+
 ## Usage
+
+Generate your sitemap from the CLI:
+
+```bash
+ $ bin/console sylius:sitemap:generate
+```
+
+*Add this command to your cronjob to regularly generate a new sitemap, e.g. once a day.*
+
+If you only want to generate the sitemap for a specific channel, use:
+
+```bash
+ $ bin/console sylius:sitemap:generate --channel=US_WEB
+```
 
 The plugin defines three default URI's:
 
 * `sitemap.xml`: redirects to `sitemap_index.xml`
 * `sitemap_index.xml`: renders the sitemap index file (with links to the provider xml files)
-* `sitemap/all.xml`: renders all the URI's from all providers in a single response
 
 Next to this, each provider registeres it's own URI. Take a look in the sitemap index file for the correct URI's.
 
-## Default configuration
+## Default Configuration
 
 Get a full list of configuration: `bin/console config:dump-reference sitemap`
 
@@ -73,6 +98,11 @@ sitemap:
         - { route: sylius_shop_homepage, parameters: [], locales: [] }
         - { route: sylius_shop_contact_request, parameters: [], locales: [] }
 ```
+
+The request context is also important for generating the URLs inside the sitemap:
+
+* The hostname is defined per channel, if nothing set it defaults to `localhost`
+* Other request context settings can be adjusted as mentioned in the [Symfony docs](https://symfony.com/doc/current/routing.html#generating-urls-in-commands)
 
 ## Default storage
 

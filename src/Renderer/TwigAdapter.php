@@ -5,23 +5,19 @@ declare(strict_types=1);
 namespace SitemapPlugin\Renderer;
 
 use SitemapPlugin\Model\SitemapInterface;
-use Symfony\Component\Templating\EngineInterface;
+use Twig\Environment;
 
 final class TwigAdapter implements RendererAdapterInterface
 {
-    /** @var EngineInterface */
-    private $twig;
+    private Environment $twig;
 
-    /** @var string */
-    private $template;
+    private string $template;
 
-    /** @var bool */
-    private $hreflang;
+    private bool $hreflang;
 
-    /** @var bool */
-    private $images;
+    private bool $images;
 
-    public function __construct(EngineInterface $twig, string $template, bool $hreflang = true, bool $images = true)
+    public function __construct(Environment $twig, string $template, bool $hreflang = true, bool $images = true)
     {
         $this->twig = $twig;
         $this->template = $template;
@@ -29,9 +25,6 @@ final class TwigAdapter implements RendererAdapterInterface
         $this->images = $images;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function render(SitemapInterface $sitemap): string
     {
         return $this->twig->render($this->template, [

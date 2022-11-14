@@ -1,17 +1,16 @@
-includes:
-    - vendor/phpstan/phpstan-doctrine/extension.neon
-    - vendor/phpstan/phpstan-webmozart-assert/extension.neon
-
 parameters:
     reportUnmatchedIgnoredErrors: true
+    checkMissingIterableValueType: false
+    checkGenericClassInNonGenericObjectType: false
 
     excludes_analyse:
         # Makes PHPStan crash
         - 'src/DependencyInjection/Configuration.php'
 
-        # todo remove this in v2
-        - 'src/Provider/ProductUrlProvider.php'
+        # Remove when SF4 is not supported anymore (and do the parent call)
+        - src/Routing/SitemapLoader.php
 
         # Test dependencies
         - 'tests/Application/app/**.php'
         - 'tests/Application/src/**.php'
+

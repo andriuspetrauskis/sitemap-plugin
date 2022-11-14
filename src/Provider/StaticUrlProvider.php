@@ -12,23 +12,16 @@ use Symfony\Component\Routing\RouterInterface;
 
 final class StaticUrlProvider implements UrlProviderInterface
 {
-    /** @var RouterInterface */
-    private $router;
+    private RouterInterface $router;
 
-    /** @var UrlFactoryInterface */
-    private $sitemapUrlFactory;
+    private UrlFactoryInterface $sitemapUrlFactory;
 
-    /** @var AlternativeUrlFactoryInterface */
-    private $urlAlternativeFactory;
+    private AlternativeUrlFactoryInterface $urlAlternativeFactory;
 
-    /** @var array */
-    private $urls = [];
+    /** @var array<string, array> */
+    private array $routes;
 
-    /** @var array */
-    private $routes;
-
-    /** @var ChannelInterface */
-    private $channel;
+    private ChannelInterface $channel;
 
     public function __construct(
         RouterInterface $router,
@@ -50,10 +43,10 @@ final class StaticUrlProvider implements UrlProviderInterface
     public function generate(ChannelInterface $channel): iterable
     {
         $this->channel = $channel;
-        $this->urls = [];
+        $urls = [];
 
-        if (empty($this->routes)) {
-            return $this->urls;
+        if (0 === \count($this->routes)) {
+            return $urls;
         }
 
         foreach ($this->transformAndYieldRoutes() as $route) {
@@ -69,10 +62,10 @@ final class StaticUrlProvider implements UrlProviderInterface
                 $staticUrl->addAlternative($this->urlAlternativeFactory->createNew($alternativeLocation, $alternativeLocaleCode));
             }
 
-            $this->urls[] = $staticUrl;
+            $urls[] = $staticUrl;
         }
 
-        return $this->urls;
+        return $urls;
     }
 
     private function transformAndYieldRoutes(): \Generator
@@ -88,7 +81,7 @@ final class StaticUrlProvider implements UrlProviderInterface
         $route = $this->addDefaultRoute($route);
 
         // Populate locales array by other enabled locales for current channel if no locales are specified
-        if (!isset($route['locales']) || empty($route['locales'])) {
+        if (!isset($route['locales']) || 0 === \count($route['locales'])) {
             $route['locales'] = $this->getAlternativeLocales();
         }
 
@@ -106,7 +99,7 @@ final class StaticUrlProvider implements UrlProviderInterface
 
         $defaultLocale = $this->channel->getDefaultLocale();
 
-        if ($defaultLocale) {
+        if (null !== $defaultLocale) {
             $route['parameters']['_locale'] = $defaultLocale->getCode();
         }
 
@@ -118,7 +111,7 @@ final class StaticUrlProvider implements UrlProviderInterface
         $locales = $route['locales'];
         $locale = $route['parameters']['_locale'];
 
-        $key = \array_search($locale, $locales);
+        $key = \array_search($locale, $locales, true);
 
         if ($key !== false) {
             unset($route['locales'][$key]);

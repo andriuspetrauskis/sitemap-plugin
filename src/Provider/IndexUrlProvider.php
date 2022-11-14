@@ -10,19 +10,13 @@ use Symfony\Component\Routing\RouterInterface;
 final class IndexUrlProvider implements IndexUrlProviderInterface
 {
     /** @var UrlProviderInterface[] */
-    private $providers = [];
+    private array $providers = [];
 
-    /** @var RouterInterface */
-    private $router;
+    private RouterInterface $router;
 
-    /** @var IndexUrlFactoryInterface */
-    private $sitemapIndexUrlFactory;
+    private IndexUrlFactoryInterface $sitemapIndexUrlFactory;
 
-    /** @var array */
-    private $urls = [];
-
-    /** @var array */
-    private $paths = [];
+    private array $paths = [];
 
     public function __construct(
         RouterInterface $router,
@@ -40,6 +34,7 @@ final class IndexUrlProvider implements IndexUrlProviderInterface
 
     public function generate(): iterable
     {
+        $urls = [];
         foreach ($this->providers as $provider) {
             $pathCount = count($this->paths[$provider->getName()]);
 
@@ -48,10 +43,10 @@ final class IndexUrlProvider implements IndexUrlProviderInterface
 
                 $location = $this->router->generate('sylius_sitemap_'.$provider->getName(), $params);
 
-                $this->urls[] = $this->sitemapIndexUrlFactory->createNew($location);
+                $urls[] = $this->sitemapIndexUrlFactory->createNew($location);
             }
         }
 
-        return $this->urls;
+        return $urls;
     }
 }

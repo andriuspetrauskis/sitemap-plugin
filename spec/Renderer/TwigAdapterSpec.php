@@ -9,11 +9,11 @@ use SitemapPlugin\Model\SitemapInterface;
 use SitemapPlugin\Model\UrlInterface;
 use SitemapPlugin\Renderer\RendererAdapterInterface;
 use SitemapPlugin\Renderer\TwigAdapter;
-use Symfony\Component\Templating\EngineInterface;
+use Twig\Environment;
 
 final class TwigAdapterSpec extends ObjectBehavior
 {
-    function let(EngineInterface $twig): void
+    function let(Environment $twig): void
     {
         $this->beConstructedWith($twig, '@SyliusCore/Sitemap/url_set.xml.twig', true);
     }
@@ -28,7 +28,7 @@ final class TwigAdapterSpec extends ObjectBehavior
         $this->shouldImplement(RendererAdapterInterface::class);
     }
 
-    function it_renders_sitemap(EngineInterface $twig, SitemapInterface $sitemap, UrlInterface $productUrl): void
+    function it_renders_sitemap(Environment $twig, SitemapInterface $sitemap, UrlInterface $productUrl): void
     {
         $sitemap->getUrls()->willReturn([$productUrl]);
 

@@ -17,7 +17,7 @@ interface UrlInterface
 
     public function setLastModification(DateTimeInterface $lastModification): void;
 
-    public function getChangeFrequency(): string;
+    public function getChangeFrequency(): ?string;
 
     public function setChangeFrequency(ChangeFrequency $changeFrequency): void;
 
@@ -25,32 +25,20 @@ interface UrlInterface
 
     public function setPriority(float $priority): void;
 
-    /**
-     * @return Collection|AlternativeUrlInterface[]
-     */
     public function getAlternatives(): Collection;
 
-    /**
-     * @param AlternativeUrlInterface[] $alternatives
-     */
     public function setAlternatives(iterable $alternatives): void;
 
-    public function addAlternative(AlternativeUrlInterface $image): void;
+    public function addAlternative(AlternativeUrlInterface $alternative): void;
 
-    public function hasAlternative(AlternativeUrlInterface $image): bool;
+    public function hasAlternative(AlternativeUrlInterface $alternative): bool;
 
-    public function removeAlternative(AlternativeUrlInterface $image): void;
+    public function removeAlternative(AlternativeUrlInterface $alternative): void;
 
     public function hasAlternatives(): bool;
 
-    /**
-     * @return Collection|ImageInterface[]
-     */
     public function getImages(): Collection;
 
-    /**
-     * @param ImageInterface[] $images
-     */
     public function setImages(iterable $images): void;
 
     public function addImage(ImageInterface $image): void;

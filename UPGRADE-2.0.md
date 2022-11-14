@@ -2,7 +2,8 @@
 
 ## TL-DR
 
-* Plugin structure upgraded to PluginSkeleton:^1.3
+* Plugin structure upgraded to PluginSkeleton:^1.9
+* Plugin minimum Sylius version bumped to Sylius 1.9
 * Removed the `all.xml` endpoint - use the sitemap index
 * Sitemaps are now generated via the command line, see below.
 * Dropped support for relative URL's
@@ -40,4 +41,7 @@
     * `hasImage(SitemapImageUrlInterface $image): bool`
     * `removeImage(SitemapImageUrlInterface $image): void`
     * `public function hasImages(): bool`
+* `UrlInterface::setLocalization` got renamed into `UrlInterface::setLocation`
+* In several interface several properties became nullable, as the sitemap spec also doesn't require them  
+* Adding alternative URLs has been changed, use the factory & inject it via `addAlternative` into the `Url` model  
 * Providers now need to have a ChannelContext supplied.

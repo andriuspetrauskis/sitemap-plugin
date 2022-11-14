@@ -14,26 +14,23 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Routing\RouterInterface;
 
 final class GenerateSitemapCommand extends Command
 {
-    /** @var \SitemapPlugin\Builder\SitemapBuilderInterface */
-    private $sitemapBuilder;
+    private SitemapBuilderInterface $sitemapBuilder;
 
-    /** @var SitemapIndexBuilderInterface */
-    private $sitemapIndexBuilder;
+    private SitemapIndexBuilderInterface $sitemapIndexBuilder;
 
-    /** @var SitemapRendererInterface */
-    private $sitemapRenderer;
+    private SitemapRendererInterface $sitemapRenderer;
 
-    /** @var SitemapRendererInterface */
-    private $sitemapIndexRenderer;
+    private SitemapRendererInterface $sitemapIndexRenderer;
 
-    /** @var Writer */
-    private $writer;
+    private Writer $writer;
 
-    /** @var ChannelRepositoryInterface */
-    private $channelRepository;
+    private ChannelRepositoryInterface $channelRepository;
+
+    private RouterInterface $router;
 
     public function __construct(
         SitemapRendererInterface $sitemapRenderer,
@@ -41,7 +38,8 @@ final class GenerateSitemapCommand extends Command
         SitemapBuilderInterface $sitemapBuilder,
         SitemapIndexBuilderInterface $sitemapIndexBuilder,
         Writer $writer,
-        ChannelRepositoryInterface $channelRepository
+        ChannelRepositoryInterface $channelRepository,
+        RouterInterface $router
     ) {
         $this->sitemapRenderer = $sitemapRenderer;
         $this->sitemapIndexRenderer = $sitemapIndexRenderer;
@@ -49,6 +47,7 @@ final class GenerateSitemapCommand extends Command
         $this->sitemapIndexBuilder = $sitemapIndexBuilder;
         $this->writer = $writer;
         $this->channelRepository = $channelRepository;
+        $this->router = $router;
 
         parent::__construct('sylius:sitemap:generate');
     }
@@ -59,15 +58,21 @@ final class GenerateSitemapCommand extends Command
         $this->addOption('limit', 'l', InputOption::VALUE_OPTIONAL, 'Limit amount of URLs per sitemap', 50000);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output)
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
         foreach ($this->channels($input) as $channel) {
             $this->executeChannel($channel, $input, $output);
         }
+
+        return 0;
     }
 
-    private function executeChannel(ChannelInterface $channel, InputInterface $input, OutputInterface $output)
+    private function executeChannel(ChannelInterface $channel, InputInterface $input, OutputInterface $output): void
     {
+        $output->writeln(\sprintf('Start generating sitemaps for channel "%s"', $channel->getName()));
+
+        $this->router->getContext()->setHost($channel->getHostname() ?? 'localhost');
+        // TODO make sure providers are every time emptied (reset call or smth?)
         foreach ($this->sitemapBuilder->getProviders() as $provider) {
             $output->writeln(\sprintf('Start generating sitemap "%s" for channel "%s"', $provider->getName(), $channel->getCode()));
 
@@ -114,10 +119,21 @@ final class GenerateSitemapCommand extends Command
      */
     private function channels(InputInterface $input): iterable
     {
-        if (!empty($input->getOption('channel'))) {
+        if (self::hasChannelInput($input)) {
             return $this->channelRepository->findBy(['code' => $input->getOption('channel'), 'enabled' => true]);
         }
 
         return $this->channelRepository->findBy(['enabled' => true]);
+    }
+
+    private static function hasChannelInput(InputInterface $input): bool
+    {
+        $inputValue = $input->getOption('channel');
+
+        if (\is_array($inputValue) && 0 === \count($inputValue)) {
+            return false;
+        }
+
+        return null !== $inputValue;
     }
 }

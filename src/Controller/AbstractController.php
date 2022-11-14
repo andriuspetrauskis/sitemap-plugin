@@ -12,8 +12,7 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 abstract class AbstractController
 {
-    /** @var Reader */
-    protected $reader;
+    protected Reader $reader;
 
     public function __construct(Reader $reader)
     {
@@ -26,7 +25,7 @@ abstract class AbstractController
             throw new NotFoundHttpException(\sprintf('File "%s" not found', $path));
         }
 
-        $response = new StreamedResponse(function () use ($path) {
+        $response = new StreamedResponse(function () use ($path): void {
             $stream = $this->reader->getStream($path);
             $stream->open(new StreamMode('r'));
             while (!$stream->eof()) {
