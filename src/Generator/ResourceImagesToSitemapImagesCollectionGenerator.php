@@ -8,10 +8,9 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Liip\ImagineBundle\Imagine\Cache\CacheManager;
 use SitemapPlugin\Factory\ImageFactoryInterface;
-use Sylius\Component\Core\Model\ProductImageInterface;
-use Sylius\Component\Core\Model\ProductInterface;
+use Sylius\Component\Core\Model\ImagesAwareInterface;
 
-final class ProductImagesToSitemapImagesCollectionGenerator implements ProductImagesToSitemapImagesCollectionGeneratorInterface
+final class ResourceImagesToSitemapImagesCollectionGenerator implements ResourceImagesToSitemapImagesCollectionGeneratorInterface
 {
     private CacheManager $imagineCacheManager;
 
@@ -32,12 +31,11 @@ final class ProductImagesToSitemapImagesCollectionGenerator implements ProductIm
         }
     }
 
-    public function generate(ProductInterface $product): Collection
+    public function generate(ImagesAwareInterface $resource): Collection
     {
         $images = new ArrayCollection();
 
-        /** @var ProductImageInterface $image */
-        foreach ($product->getImages() as $image) {
+        foreach ($resource->getImages() as $image) {
             $path = $image->getPath();
 
             if (null === $path) {
