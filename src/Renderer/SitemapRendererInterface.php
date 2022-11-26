@@ -8,9 +8,5 @@ use SitemapPlugin\Model\SitemapInterface;
 
 interface SitemapRendererInterface
 {
-
-    /**
-     * @return string[]
-     */
-    public function render(SitemapInterface $sitemap, ?int $limit = null): iterable;
+    public function render(SitemapInterface $sitemap): string;
 }
