@@ -9,13 +9,13 @@ use SitemapPlugin\Exception\SitemapUrlNotFoundException;
 
 final class SitemapIndex implements SitemapInterface
 {
-    private array $urls = [];
+    private iterable $urls = [];
 
     private string $localization;
 
     private DateTimeInterface $lastModification;
 
-    public function setUrls(array $urls): void
+    public function setUrls(iterable $urls): void
     {
         $this->urls = $urls;
     }
@@ -27,11 +27,23 @@ final class SitemapIndex implements SitemapInterface
 
     public function addUrl(UrlInterface $url): void
     {
-        $this->urls[] = $url;
+        if (is_array($this->urls)) {
+            $this->urls[] = $url;
+        } elseif ($this->urls instanceof \Iterator) {
+            $urls = new \AppendIterator();
+            $urls->append(new \NoRewindIterator($this->urls));
+            $urls->append(new \NoRewindIterator(new \ArrayIterator([$url])));
+
+            $this->urls = $urls;
+        }
     }
 
     public function removeUrl(UrlInterface $url): void
     {
+        if (!is_array($this->urls)) {
+            $this->urls = iterator_to_array($this->urls);
+        }
+
         $key = \array_search($url, $this->urls, true);
         if (false === $key) {
             throw new SitemapUrlNotFoundException($url);

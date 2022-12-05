@@ -16,7 +16,7 @@ interface SitemapInterface
     /**
      * @param UrlInterface[] $urlSet
      */
-    public function setUrls(array $urlSet): void;
+    public function setUrls(iterable $urlSet): void;
 
     public function addUrl(UrlInterface $url): void;
 

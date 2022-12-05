@@ -8,6 +8,7 @@ use SitemapPlugin\Factory\SitemapIndexFactoryInterface;
 use SitemapPlugin\Model\SitemapInterface;
 use SitemapPlugin\Provider\IndexUrlProviderInterface;
 use SitemapPlugin\Provider\UrlProviderInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
 
 final class SitemapIndexBuilder implements SitemapIndexBuilderInterface
 {
@@ -38,13 +39,16 @@ final class SitemapIndexBuilder implements SitemapIndexBuilderInterface
         $this->indexProviders[] = $indexProvider;
     }
 
-    public function build(): SitemapInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function build(ChannelInterface $channel, int $limit): SitemapInterface
     {
         $sitemap = $this->sitemapIndexFactory->createNew();
         $urls = [];
 
         foreach ($this->indexProviders as $indexProvider) {
-            $urls[] = $indexProvider->generate();
+            $urls[] = $indexProvider->generate($channel, $limit);
         }
 
         $sitemap->setUrls(\array_merge(...$urls));

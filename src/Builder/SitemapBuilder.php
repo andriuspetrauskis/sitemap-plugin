@@ -6,6 +6,7 @@ namespace SitemapPlugin\Builder;
 
 use SitemapPlugin\Factory\SitemapFactoryInterface;
 use SitemapPlugin\Model\SitemapInterface;
+use SitemapPlugin\Provider\BatchableUrlProviderInterface;
 use SitemapPlugin\Provider\UrlProviderInterface;
 use Sylius\Component\Core\Model\ChannelInterface;
 
@@ -41,5 +42,20 @@ final class SitemapBuilder implements SitemapBuilderInterface
         $sitemap->setUrls(\array_merge(...$urls));
 
         return $sitemap;
+    }
+
+    public function buildBatches(
+        BatchableUrlProviderInterface $provider,
+        ChannelInterface $channel,
+        int $batchSize
+    ): iterable {
+        $batches = $provider->generateBatches($channel, $batchSize);
+
+        foreach ($batches as $batch) {
+            $sitemap = $this->sitemapFactory->createNew();
+            $sitemap->setUrls($batch);
+
+            yield $sitemap;
+        }
     }
 }

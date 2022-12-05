@@ -22,14 +22,18 @@ abstract class XmlApiTestCase extends BaseXmlApiTestCase
         $this->expectedResponsesPath = __DIR__ . '/../Responses/';
     }
 
-    protected function generateSitemaps(): void
+    protected function generateSitemaps(array $options = []): void
     {
         $kernel = self::bootKernel();
         $application = new Application($kernel);
 
         $command = $application->find('sylius:sitemap:generate');
         $commandTester = new CommandTester($command);
-        $commandTester->execute(['command' => $command->getName()]);
+        $commandTester->execute(array_merge(['command' => $command->getName()], $options));
+
+        if (0 !== $commandTester->getStatusCode()) {
+            $this->fail('Failed to generate sitemap: '.$commandTester->getDisplay());
+        }
     }
 
     protected function getBufferedResponse(string $uri): Response
