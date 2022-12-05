@@ -6,6 +6,8 @@ namespace SitemapPlugin\Routing;
 
 use SitemapPlugin\Builder\SitemapBuilderInterface;
 use SitemapPlugin\Exception\RouteExistsException;
+use SitemapPlugin\Provider\BatchableUrlProviderInterface;
+use SitemapPlugin\Provider\UrlProviderInterface;
 use Symfony\Bundle\FrameworkBundle\Routing\RouteLoaderInterface;
 use Symfony\Component\Config\Loader\Loader;
 use Symfony\Component\Routing\Route;
@@ -33,29 +35,7 @@ final class SitemapLoader extends Loader implements RouteLoaderInterface
         }
 
         foreach ($this->sitemapBuilder->getProviders() as $provider) {
-            $name = 'sylius_sitemap_' . $provider->getName();
-
-            if (null !== $routes->get($name)) {
-                throw new RouteExistsException($name);
-            }
-
-            $routes->add(
-                $name,
-                new Route(
-                    '/sitemap/' . $provider->getName() . '/{index}.xml',
-                    [
-                        '_controller' => 'sylius.controller.sitemap:showAction',
-                        'name' => $provider->getName(),
-                    ],
-                    [
-                        'index' => '\d+',
-                    ],
-                    [],
-                    '',
-                    [],
-                    ['GET']
-                )
-            );
+            $this->addRoute($provider, $routes);
         }
 
         $this->loaded = true;
@@ -66,5 +46,53 @@ final class SitemapLoader extends Loader implements RouteLoaderInterface
     public function supports($resource, $type = null): bool
     {
         return 'sitemap' === $type;
+    }
+
+    private function addRoute(UrlProviderInterface $provider, RouteCollection $routes): void
+    {
+        $name = 'sylius_sitemap_' . $provider->getName();
+
+        if (null !== $routes->get($name)) {
+            throw new RouteExistsException($name);
+        }
+
+        if ($provider instanceof BatchableUrlProviderInterface) {
+            $routes->add(
+                $name,
+                new Route(
+                    sprintf('/sitemap/%s/%s_{index}.xml', $provider->getName(), $provider->getName()),
+                    [
+                        '_controller' => 'sylius.controller.sitemap:showAction',
+                        'name' => $provider->getName(),
+                        'index' => '0',
+                    ],
+                    [
+                        'index' => '\d+',
+                    ],
+                    [],
+                    '',
+                    [],
+                    ['GET']
+                )
+            );
+
+            return;
+        }
+
+        $routes->add(
+            $name,
+            new Route(
+                sprintf('/sitemap/%s.xml', $provider->getName()),
+                [
+                    '_controller' => 'sylius.controller.sitemap:showAction',
+                    'name' => $provider->getName(),
+                ],
+                [],
+                [],
+                '',
+                [],
+                ['GET']
+            )
+        );
     }
 }

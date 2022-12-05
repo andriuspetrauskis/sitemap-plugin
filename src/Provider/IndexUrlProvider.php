@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace SitemapPlugin\Provider;
 
 use SitemapPlugin\Factory\IndexUrlFactoryInterface;
+use Sylius\Component\Core\Model\ChannelInterface;
 use Symfony\Component\Routing\RouterInterface;
 
 final class IndexUrlProvider implements IndexUrlProviderInterface
@@ -16,8 +17,6 @@ final class IndexUrlProvider implements IndexUrlProviderInterface
 
     private IndexUrlFactoryInterface $sitemapIndexUrlFactory;
 
-    private array $paths = [];
-
     public function __construct(
         RouterInterface $router,
         IndexUrlFactoryInterface $sitemapIndexUrlFactory
@@ -26,25 +25,50 @@ final class IndexUrlProvider implements IndexUrlProviderInterface
         $this->sitemapIndexUrlFactory = $sitemapIndexUrlFactory;
     }
 
-    public function addProvider(UrlProviderInterface $provider, array $paths = []): void
+    public function addProvider(UrlProviderInterface $provider): void
     {
         $this->providers[] = $provider;
-        $this->paths[$provider->getName()] = $paths;
     }
 
-    public function generate(): iterable
+    public function generate(ChannelInterface $channel, int $limit): iterable
     {
         $urls = [];
         foreach ($this->providers as $provider) {
-            $pathCount = count($this->paths[$provider->getName()]);
+            $urls[] = $this->generateUrlsForProvider($provider, $channel, $limit);
+        }
 
-            for ($i = 0; $i < $pathCount; $i++) {
-                $params = ['index' => $i];
+        return array_merge(...$urls);
+    }
 
-                $location = $this->router->generate('sylius_sitemap_'.$provider->getName(), $params);
+    private function generateUrlsForProvider(UrlProviderInterface $provider, ChannelInterface $channel, int $limit): iterable
+    {
+        if ($provider instanceof BatchableUrlProviderInterface) {
+            return $this->generateBatchedUrls($provider, $channel, $limit);
+        }
 
-                $urls[] = $this->sitemapIndexUrlFactory->createNew($location);
-            }
+        $urls = [];
+
+        $location = $this->router->generate('sylius_sitemap_'.$provider->getName());
+
+        $urls[] = $this->sitemapIndexUrlFactory->createNew($location);
+
+        return $urls;
+    }
+
+    private function generateBatchedUrls(BatchableUrlProviderInterface $provider, ChannelInterface $channel, int $limit): iterable
+    {
+        $batchCount = $provider->getBatchCount($channel, $limit);
+
+        $urls = [];
+        if ($batchCount === 0 && !$provider->shouldSkipEmptyFile()) {
+            $batchCount = 1;
+        }
+        for ($i = 0; $i < $batchCount; $i++) {
+            $params = ['index' => $i];
+
+            $location = $this->router->generate('sylius_sitemap_'.$provider->getName(), $params);
+
+            $urls[] = $this->sitemapIndexUrlFactory->createNew($location);
         }
 
         return $urls;

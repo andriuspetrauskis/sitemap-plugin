@@ -10,7 +10,7 @@ final class SitemapProductControllerApiLocalesImagesTest extends XmlApiTestCase
     {
         $this->loadFixturesFromFiles(['channel.yaml', 'product_locale_image.yaml']);
         $this->generateSitemaps();
-        $response = $this->getBufferedResponse('/sitemap/products.xml');
+        $response = $this->getBufferedResponse('/sitemap/products/products_0.xml');
 
         $this->assertResponse($response, 'show_sitemap_products_locale_image');
         $this->deleteSitemaps();

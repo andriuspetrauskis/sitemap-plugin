@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace SitemapPlugin\Controller;
 
+use SitemapPlugin\Builder\SitemapPathBuilder;
 use SitemapPlugin\Filesystem\Reader;
 use Sylius\Component\Channel\Context\ChannelContextInterface;
 use Symfony\Component\HttpFoundation\Response;
@@ -11,19 +12,26 @@ use Symfony\Component\HttpFoundation\Response;
 final class SitemapController extends AbstractController
 {
     private ChannelContextInterface $channelContext;
+    private SitemapPathBuilder $sitemapPathBuilder;
 
     public function __construct(
         ChannelContextInterface $channelContext,
-        Reader $reader
+        Reader $reader,
+        SitemapPathBuilder $sitemapPathBuilder
     ) {
         $this->channelContext = $channelContext;
+        $this->sitemapPathBuilder = $sitemapPathBuilder;
 
         parent::__construct($reader);
     }
 
-    public function showAction(string $name, int $index): Response
+    public function showAction(string $name, ?int $index): Response
     {
-        $path = \sprintf('%s/%s', $this->channelContext->getChannel()->getCode(), \sprintf('%s_%d.xml', $name, $index));
+        $path = $this->sitemapPathBuilder->buildByProviderName(
+            $this->channelContext->getChannel(),
+            $name,
+            $index
+        );
 
         return $this->createResponse($path);
     }

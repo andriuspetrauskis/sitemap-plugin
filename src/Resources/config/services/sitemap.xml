@@ -19,6 +19,9 @@
             </argument>
         </service>
 
+        <service id="sylius.sitemap_path_builder" class="SitemapPlugin\Builder\SitemapPathBuilder">
+        </service>
+
         <service id="sylius.command.generate_sitemap" class="SitemapPlugin\Command\GenerateSitemapCommand">
             <argument type="service" id="sylius.sitemap_generator.file" />
 
@@ -34,11 +37,13 @@
             <argument type="service" id="sylius.repository.channel" />
             <argument type="service" id="router" />
             <argument type="service" id="logger" />
+            <argument type="service" id="sylius.sitemap_path_builder" />
         </service>
 
         <service id="sylius.controller.sitemap" class="SitemapPlugin\Controller\SitemapController">
             <argument type="service" id="sylius.context.channel"/>
             <argument type="service" id="sylius.sitemap_reader" />
+            <argument type="service" id="sylius.sitemap_path_builder" />
 
             <tag name="controller.service_arguments" />
         </service>

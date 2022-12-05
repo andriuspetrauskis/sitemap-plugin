@@ -61,14 +61,14 @@ final class ProductUrlProvider extends AbstractBatchableResourceUrlProvider
 
     protected function count(ChannelInterface $channel): int
     {
-        return $this->productRepository->createQueryBuilder('o')
-            ->select('count(*)')
+         return $this->productRepository->createQueryBuilder('o')
+            ->select('count(1)')
             ->innerJoin('o.translations', 'translation')
             ->andWhere(':channel MEMBER OF o.channels')
             ->andWhere('o.enabled = :enabled')
             ->setParameter('channel', $channel)
             ->setParameter('enabled', true)
             ->getQuery()
-            ->getSingleColumnResult();
+            ->getSingleScalarResult();
     }
 }

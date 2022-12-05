@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace SitemapPlugin\Generator;
 
+use ApiTestCase\PathBuilder;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use SitemapPlugin\Builder\SitemapBuilderInterface;
 use SitemapPlugin\Builder\SitemapIndexBuilderInterface;
+use SitemapPlugin\Builder\SitemapPathBuilder;
 use SitemapPlugin\Filesystem\Writer;
 use SitemapPlugin\Model\SitemapInterface;
 use SitemapPlugin\Provider\BatchableUrlProviderInterface;
@@ -35,6 +37,8 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
 
     private RouterInterface $router;
 
+    private SitemapPathBuilder $sitemapPathBuilder;
+
     public function __construct(
         SitemapRendererInterface $sitemapRenderer,
         SitemapRendererInterface $sitemapIndexRenderer,
@@ -43,7 +47,8 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
         Writer $writer,
         ChannelRepositoryInterface $channelRepository,
         RouterInterface $router,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        SitemapPathBuilder $sitemapPathBuilder
     ) {
         $this->sitemapRenderer = $sitemapRenderer;
         $this->sitemapIndexRenderer = $sitemapIndexRenderer;
@@ -52,6 +57,7 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
         $this->writer = $writer;
         $this->channelRepository = $channelRepository;
         $this->router = $router;
+        $this->sitemapPathBuilder = $sitemapPathBuilder;
         $this->setLogger($logger);
     }
 
@@ -72,17 +78,19 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
             $this->generateForChannelProvider($channel, $provider, $limit);
         }
 
-        $this->generateSitemapIndexForChannel($channel);
+        $this->generateSitemapIndexForChannel($channel, $limit);
     }
 
     private function generateForChannelProvider(ChannelInterface $channel, UrlProviderInterface $provider, int $limit): void
     {
-        $this->logger->info(\sprintf('Start generating sitemap "%s" for channel "%s"', $provider->getName(), $channel->getCode()));
+        $this->logger->info(
+            \sprintf('Start generating sitemap "%s" for channel "%s"', $provider->getName(), $channel->getCode())
+        );
 
         if ($provider instanceof BatchableUrlProviderInterface) {
             $sitemaps = $this->sitemapBuilder->buildBatches($provider, $channel, $limit);
             foreach ($sitemaps as $index => $sitemap) {
-                $path = $this->path($channel, \sprintf('%s_%d.xml', $provider->getName(), $index));
+                $path = $this->sitemapPathBuilder->build($channel, $provider, $index);
                 $this->saveXml($path, $sitemap, $provider, $channel, $index);
             }
 
@@ -90,7 +98,7 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
         }
 
         $sitemap = $this->sitemapBuilder->build($provider, $channel);
-        $path = $this->path($channel, \sprintf('%s.xml', $provider->getName()));
+        $path = $this->sitemapPathBuilder->build($channel, $provider);
         $this->saveXml($path, $sitemap, $provider, $channel);
     }
 
@@ -115,18 +123,16 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
             $channel->getCode(),
             $path
         ));
-
-        $this->sitemapIndexBuilder->addPath($provider, $path);
     }
 
-    private function generateSitemapIndexForChannel(ChannelInterface $channel): void
+    private function generateSitemapIndexForChannel(ChannelInterface $channel, int $limit): void
     {
         $this->logger->info(\sprintf('Start generating sitemap index for channel "%s"', $channel->getCode()));
 
-        $sitemap = $this->sitemapIndexBuilder->build();
+        $sitemap = $this->sitemapIndexBuilder->build($channel, $limit);
         $xml = $this->sitemapIndexRenderer->render($sitemap);
 
-        $path = $this->path($channel, 'sitemap_index.xml');
+        $path = $this->sitemapPathBuilder->buildStatic($channel, 'sitemap_index');
 
         $this->writer->write(
             $path,
@@ -134,11 +140,6 @@ class SitemapFileGenerator implements SitemapFileGeneratorInterface
         );
 
         $this->logger->info(\sprintf('Finished generating sitemap index for channel "%s" at path "%s"', $channel->getCode(), $path));
-    }
-
-    private function path(ChannelInterface $channel, string $path): string
-    {
-        return \sprintf('%s/%s', $channel->getCode(), $path);
     }
 
     /**

@@ -52,9 +52,7 @@ abstract class AbstractBatchableResourceUrlProvider implements BatchableUrlProvi
 
     public function generateBatches(ChannelInterface $channel, int $batchSize): iterable
     {
-        $productCount = $this->count($channel);
-
-        $batches = ceil($productCount / $batchSize);
+        $batches = $this->getBatchCount($channel, $batchSize);
 
         for ($i = 0; $i < $batches; $i++) {
             yield $this->generateBatch($channel, $i * $batchSize, $batchSize);
@@ -66,17 +64,31 @@ abstract class AbstractBatchableResourceUrlProvider implements BatchableUrlProvi
         return $this->generateBatch($channel, 0, PHP_INT_MAX);
     }
 
+    public function getBatchCount(ChannelInterface $channel, int $bathSize): int
+    {
+        $count = $this->count($channel);
+
+        return (int) ceil($count / $bathSize);
+    }
+
+    public function shouldSkipEmptyFile(): bool
+    {
+        // If set to false, will generate files despite if there are anything in it
+        // If set to true, will skip generating empty files
+        return false;
+    }
+
     protected function generateBatch(ChannelInterface $channel, int $start, int $entries): iterable
     {
-        foreach ($this->getResources($channel, $start, $entries) as $product) {
-            yield $this->createUrl($product, $channel);
+        foreach ($this->getResources($channel, $start, $entries) as $resource) {
+            yield $this->createUrl($resource, $channel);
         }
     }
 
     protected function createUrl(ResourceInterface $resource, ChannelInterface $channel): UrlInterface
     {
         $resourceUrl = $this->urlFactory->createNew(
-            $resource instanceof SlugAwareInterface ?
+            ($resource instanceof SlugAwareInterface && !$resource instanceof TranslatableInterface) ?
                 $this->generateResourceUrlBySlug($resource) : $this->generateResourceUrl($resource)
         );
         $resourceUrl->setChangeFrequency(ChangeFrequency::always());

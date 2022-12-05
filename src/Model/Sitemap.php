@@ -41,7 +41,7 @@ final class Sitemap implements SitemapInterface
     public function removeUrl(UrlInterface $url): void
     {
         if (!is_array($this->urls)) {
-            throw new \RuntimeException('Could not remove url from iterator, make sure to use arrays');
+            $this->urls = iterator_to_array($this->urls);
         }
 
         $key = \array_search($url, $this->urls, true);
